@@ -17,26 +17,25 @@ jobs:
             name: 'Windows 32'
             output: 'libtesseract32.dll'
             cmake_args: '-G "Visual Studio 16 2019" -A Win32'
-            sw_args: '-platform x86 -win-mt'
-            platform: 'x32'
+            sw_args: '-platform x86 -win-mt -trace'
 
           - os: windows-latest
             name: 'Windows 64'
             output: 'libtesseract64.dll'
             cmake_args: '-G "Visual Studio 16 2019"'
-            sw_args: '-platform x64 -win-mt'
+            sw_args: '-platform x64 -win-mt -trace'
 
           - os: ubuntu-20.04
             name: 'Linux 64'
             output: 'libtesseract64.so'
             cmake_args: '-G "Unix Makefiles"'
-            sw_args: '-platform x64'
+            sw_args: '-platform x64 -trace'
             
           - os: macos-latest
             name: 'MacOS 64'
             output: 'libtesseract64.dylib'
             cmake_args: '-G "Unix Makefiles"'
-            sw_args: '-platform x64 -os macos-10.13'
+            sw_args: '-platform x64 -os macos-10.13 -trace'
 
     steps:
       - uses: actions/checkout@v2
@@ -47,12 +46,12 @@ jobs:
         uses: actions/cache@v2.1.1
         with:
           path: storage
-          key: ${{ matrix.config.name }}${{ matrix.config.sw_args }}
+          key: ${{ matrix.config.name }}${{ matrix.config.sw_args }}-debug
 
       - name: Build Tesseract
         if: steps.cache.outputs.cache-hit != 'true'
         run: |
-          ./sw build ${{ matrix.config.sw_args }} -storage-dir=storage -static -static-dependencies -config r org.sw.demo.google.tesseract.tesseract-master
+          ./sw build ${{ matrix.config.sw_args }} -storage-dir=storage -static -static-dependencies -config d org.sw.demo.google.tesseract.tesseract-master
 
       - name: Extract Headers & Libraries
         run: |
@@ -73,7 +72,7 @@ jobs:
       - name: Build Plugin
         run: |
           cmake -S . ${{ matrix.config.cmake_args }}
-          cmake --build .  --config Release
+          cmake --build .  --config Debug
           find . -name libtesseract.binary -exec cp "{}" ${{ matrix.config.output }} \;
 
       - uses: actions/upload-artifact@v2
